@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="ja">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stop Motion Animation Studio</title>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100%;
+      color: #2d3748;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin: 0 0 10px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin: 0 0 15px 0;
+      color: #4a5568;
+    }
+
+    /* カメラセクション */
+    .camera-section {
+      position: relative;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 8px;
+    }
+
+    #videoPreview {
+      width: 100%;
+      height: auto;
+      background: #000;
+      border-radius: 8px;
+      display: none;
+    }
+
+    #videoPreview.active {
+      display: block;
+    }
+
+    #onionSkinCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      border-radius: 8px;
+      display: none;
+    }
+
+    #onionSkinCanvas.active {
+      display: block;
+    }
+
+    .camera-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: #a0aec0;
+    }
+
+    .camera-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+      background: #48bb78;
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #38a169;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f56565;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #e53e3e;
+    }
+
+    /* オニオンスキン設定 */
+    .onion-skin-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      padding: 12px;
+      background: #edf2f7;
+      border-radius: 8px;
+    }
+
+    .onion-skin-toggle input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .onion-skin-toggle label {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* フレームカウンター */
+    .frame-counter {
+      margin-top: 15px;
+      padding: 15px;
+      background: #edf2f7;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .frame-counter-label {
+      font-size: 0.875rem;
+      color: #4a5568;
+      margin-bottom: 5px;
+    }
+
+    .frame-counter-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    /* プレビューセクション */
+    .preview-section {
+      grid-column: 1 / -1;
+    }
+
+    .preview-container {
+      text-align: center;
+      background: #000;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #previewCanvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    #videoPreviewPlayer {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: none;
+    }
+
+    #videoPreviewPlayer.active {
+      display: block;
+    }
+
+    .preview-controls {
+      margin-top: 20px;
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .speed-control input[type="range"] {
+      flex: 1;
+    }
+
+    /* エクスポートセクション */
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .export-info {
+      background: #edf2f7;
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 0.875rem;
+    }
+
+    .export-info p {
+      margin: 5px 0;
+    }
+
+    .export-info strong {
+      color: #2d3748;
+    }
+
+    /* プログレス表示 */
+    .progress-container {
+      margin-top: 15px;
+      display: none;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background: #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .progress-text {
+      margin-top: 10px;
+      text-align: center;
+      color: #4a5568;
+      font-size: 0.875rem;
+    }
+
+    /* メッセージ表示 */
+    .message {
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 0.875rem;
+    }
+
+    .message-error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #fc8181;
+    }
+
+    .message-success {
+      background: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #48bb78;
+    }
+
+    .message-info {
+      background: #bee3f8;
+      color: #2c5282;
+      border: 1px solid #4299e1;
+    }
+
+    /* ローディングオーバーレイ */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 90%;
+      width: 400px;
+    }
+
+    .spinner {
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 767px) {
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      .btn {
+        min-width: 100px;
+        padding: 10px 16px;
+        font-size: 0.875rem;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="container">
+   <header>
+    <h1 id="appTitle">コマアニメ</h1>
+   </header>
+   <div class="main-grid"><!-- カメラセクション -->
+    <section class="card camera-section">
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h2 class="card-title" style="margin: 0;">📸 撮影</h2>
+      <div style="background: #edf2f7; padding: 8px 16px; border-radius: 8px; font-weight: bold; color: #667eea; font-size: 1.25rem;"><span id="frameCounter">0</span> 枚
+      </div>
+     </div>
+     <div class="video-container">
+      <video id="videoPreview" autoplay playsinline></video>
+      <canvas id="onionSkinCanvas"></canvas>
+     </div>
+     <div id="cameraPlaceholder" class="camera-placeholder">
+      📷
+     </div>
+     <div class="camera-controls"><button id="toggleCamera" class="btn btn-primary">カメラON</button> <button id="captureBtn" class="btn btn-secondary" disabled> <span id="captureBtnText">📸 とる</span> </button> <button id="deleteLastBtn" class="btn btn-danger" disabled>🗑️ けす</button>
+     </div>
+     <div class="onion-skin-toggle"><input type="checkbox" id="onionSkinToggle" checked> <label for="onionSkinToggle">オニオンスキン（前フレーム表示）</label>
+     </div>
+    </section><!-- プレビューセクション -->
+    <section class="card">
+     <h2 class="card-title">▶️ プレビュー</h2>
+     <div class="preview-container">
+      <canvas id="previewCanvas"></canvas>
+      <video id="videoPreviewPlayer" controls loop></video>
+     </div>
+     <div class="preview-controls">
+      <div class="speed-control"><label for="speedSlider">再生速度:</label> <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1"> <span id="speedValue">1.0x</span>
+      </div>
+      <div style="display: flex; gap: 10px;"><button id="playPreview" class="btn btn-primary" style="flex: 1;">▶️ みる</button> <button id="stopPreview" class="btn btn-danger" style="flex: 1;">⏹️ とめる</button>
+      </div>
+     </div><!-- エクスポートセクション（プレビュー内に統合） -->
+     <div class="export-section-inner">
+      <h3 class="card-title" style="margin-top: 25px; font-size: 1.1rem;">💾 ほぞん</h3>
+      <div class="export-buttons"><button id="exportGif" class="btn btn-primary"> <span id="exportGifText">📥 GIF作成</span> </button>
+      </div>
+      <div id="exportInfo" class="export-info" style="display: none;">
+       <p><strong>GIFサイズ:</strong> <span id="gifSize">-</span></p>
+       <p><strong>処理時間:</strong> <span id="processingTime">-</span></p>
+      </div>
+      <div id="progressContainer" class="progress-container">
+       <div class="progress-bar">
+        <div id="progressFill" class="progress-fill" style="width: 0%;">
+         0%
+        </div>
+       </div>
+       <p id="progressText" class="progress-text">処理中...</p>
+      </div>
+      <div id="messageContainer"></div>
+     </div>
+    </section>
+   </div>
+  </div>
+  <div id="loadingOverlay" class="loading-overlay">
+   <div class="loading-content">
+    <div class="spinner"></div>
+    <p id="loadingText">処理中です...</p>
+   </div>
+  </div><!-- GIF生成ライブラリ: gif.js -->
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+  <script type="module">
+    // ========================================
+    // 定数・グローバル変数
+    // ========================================
+    const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
+    const DEFAULT_FRAME_DURATION = 100; // デフォルトフレーム表示時間（ms）
+
+    let frames = []; // フレームデータ配列 {id, imageData, duration}
+    let nextFrameId = 1;
+    let cameraStream = null;
+    let isOnionSkinEnabled = true;
+    let ffmpegInstance = null;
+    let ffmpegLoaded = false;
+
+    // DOM要素取得
+    const videoPreview = document.getElementById('videoPreview');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const toggleCameraBtn = document.getElementById('toggleCamera');
+    const captureBtn = document.getElementById('captureBtn');
+    const deleteLastBtn = document.getElementById('deleteLastBtn');
+    const onionSkinToggle = document.getElementById('onionSkinToggle');
+    const frameCounter = document.getElementById('frameCounter');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const videoPreviewPlayer = document.getElementById('videoPreviewPlayer');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    const playPreviewBtn = document.getElementById('playPreview');
+    const stopPreviewBtn = document.getElementById('stopPreview');
+    const exportGifBtn = document.getElementById('exportGif');
+    const exportInfo = document.getElementById('exportInfo');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const messageContainer = document.getElementById('messageContainer');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+
+    // シャッター音を生成（Web Audio API）
+    function playShutterSound() {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    }
+
+    // 削除音を生成（下降音）
+    function playDeleteSound() {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // 高い音から低い音へ下降
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.2);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    }
+
+    // ========================================
+    // カメラ関連
+    // ========================================
+    async function startCamera() {
+      console.log('=== カメラ起動処理開始 ===');
+      
+      try {
+        // 1. ブラウザサポート確認
+        console.log('1. ブラウザ対応チェック...');
+        console.log('navigator.mediaDevices:', navigator.mediaDevices);
+        console.log('getUserMedia:', navigator.mediaDevices?.getUserMedia);
+        
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          const msg = 'お使いのブラウザはカメラ機能に対応していません';
+          console.error(msg);
+          showMessage(msg, 'error');
+          return;
+        }
+
+        // 2. カメラデバイス一覧取得
+        console.log('2. カメラデバイス一覧取得...');
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        console.log('利用可能なカメラデバイス:', videoDevices);
+        console.log('カメラ台数:', videoDevices.length);
+        
+        if (videoDevices.length === 0) {
+          const msg = 'カメラデバイスが見つかりません';
+          console.error(msg);
+          showMessage(msg, 'error');
+          return;
+        }
+
+        showMessage('カメラへのアクセス許可を求めています...', 'info');
+
+        // 3. カメラアクセス要求（最もシンプルな設定）
+        console.log('3. カメラアクセス要求...');
+        const constraints = { 
+          video: true,
+          audio: false 
+        };
+        console.log('制約条件:', constraints);
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('✓ カメラストリーム取得成功:', cameraStream);
+        console.log('ストリームID:', cameraStream.id);
+        console.log('ビデオトラック数:', cameraStream.getVideoTracks().length);
+        
+        const videoTrack = cameraStream.getVideoTracks()[0];
+        console.log('ビデオトラック設定:', videoTrack.getSettings());
+        
+        // 4. ビデオ要素に設定
+        console.log('4. ビデオ要素にストリーム設定...');
+        videoPreview.srcObject = cameraStream;
+        console.log('✓ srcObject設定完了');
+        
+        // 5. メタデータ読み込み待ち
+        console.log('5. メタデータ読み込み待機...');
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.warn('⚠ メタデータ読み込みタイムアウト（5秒）');
+            resolve();
+          }, 5000);
+          
+          videoPreview.onloadedmetadata = () => {
+            console.log('✓ メタデータ読み込み完了');
+            console.log('ビデオサイズ:', videoPreview.videoWidth, 'x', videoPreview.videoHeight);
+            clearTimeout(timeout);
+            resolve();
+          };
+        });
+        
+        // 6. ビデオ再生
+        console.log('6. ビデオ再生開始...');
+        try {
+          await videoPreview.play();
+          console.log('✓ ビデオ再生開始成功');
+        } catch (playError) {
+          console.error('⚠ ビデオ再生エラー（続行します）:', playError);
+        }
+        
+        // 7. UI更新
+        console.log('7. UI更新...');
+        videoPreview.classList.add('active');
+        cameraPlaceholder.style.display = 'none';
+        toggleCameraBtn.textContent = 'カメラOFF';
+        captureBtn.disabled = false;
+        console.log('✓ UI更新完了');
+        
+        showMessage('カメラが起動しました！撮影できます', 'success');
+        console.log('=== カメラ起動処理完了 ===');
+        
+      } catch (error) {
+        console.error('=== カメラ起動エラー ===');
+        console.error('エラー名(name):', error.name);
+        console.error('エラーメッセージ(message):', error.message);
+        console.error('エラー詳細(full):', error);
+        console.error('エラーstack:', error.stack);
+        
+        // エラーの種類に応じた詳細なメッセージ
+        let errorMessage = 'カメラにアクセスできませんでした。';
+        
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMessage = '【許可が必要】カメラの使用が拒否されました。ブラウザのアドレスバー左側のアイコンをクリックして、カメラを「許可」に設定してください。';
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          errorMessage = '【カメラ不在】カメラが見つかりませんでした。カメラが接続されているか確認してください。';
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          errorMessage = '【使用中】カメラが他のアプリで使用中です。他のアプリ（Zoom、Teamsなど）を閉じてください。';
+        } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+          errorMessage = '【設定エラー】カメラの設定がサポートされていません。';
+        } else if (error.name === 'SecurityError') {
+          errorMessage = '【セキュリティ】HTTPSまたはlocalhostでアクセスする必要があります。現在のURL: ' + window.location.href;
+        } else {
+          errorMessage += ' エラー: ' + error.name + ' - ' + error.message;
+        }
+        
+        showMessage(errorMessage, 'error');
+        console.error('表示メッセージ:', errorMessage);
+        
+        // エラー時の状態リセット
+        stopCamera();
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        videoPreview.srcObject = null;
+        videoPreview.classList.remove('active');
+        cameraPlaceholder.style.display = 'flex';
+        toggleCameraBtn.textContent = 'カメラON';
+        captureBtn.disabled = true;
+        cameraStream = null;
+      }
+    }
+
+    function captureFrame() {
+      if (!cameraStream) return;
+
+      // シャッター音を鳴らす
+      playShutterSound();
+
+      const canvas = document.createElement('canvas');
+      canvas.width = videoPreview.videoWidth;
+      canvas.height = videoPreview.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      // 現在のカメラ映像を描画
+      ctx.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
+
+      // canvasを画像に変換して保存
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(canvas, 0, 0);
+
+      addFrame(tempCanvas, DEFAULT_FRAME_DURATION);
+      updateOnionSkin();
+    }
+
+    // ========================================
+    // フレーム管理
+    // ========================================
+    function addFrame(canvasElement, duration = DEFAULT_FRAME_DURATION) {
+      const frame = {
+        id: nextFrameId++,
+        imageData: canvasElement,
+        duration: duration
+      };
+      frames.push(frame);
+      updateDeleteButtonState();
+      updateFrameCounter();
+      showMessage(`フレーム ${frames.length} を追加しました`, 'success');
+    }
+
+    function deleteLastFrame() {
+      if (frames.length === 0) {
+        showMessage('削除するフレームがありません', 'error');
+        return;
+      }
+      
+      // 削除音を再生
+      playDeleteSound();
+      
+      frames.pop();
+      updateDeleteButtonState();
+      updateFrameCounter();
+      updateOnionSkin();
+      showMessage(`最後のフレームを削除しました (残り: ${frames.length})`, 'info');
+    }
+
+    function updateDeleteButtonState() {
+      deleteLastBtn.disabled = frames.length === 0;
+    }
+
+    function updateFrameCounter() {
+      frameCounter.textContent = frames.length;
+    }
+
+    // ========================================
+    // プレビュー再生
+    // ========================================
+    let previewInterval = null;
+    let currentFrameIndex = 0;
+
+    function playPreview() {
+      if (frames.length === 0) {
+        showMessage('フレームがありません', 'error');
+        return;
+      }
+
+      stopPreview();
+
+      const canvas = previewCanvas;
+      const ctx = canvas.getContext('2d');
+      const speed = parseFloat(speedSlider.value);
+
+      // キャンバスサイズを最初のフレームに合わせる
+      const firstFrame = frames[0].imageData;
+      canvas.width = firstFrame.width;
+      canvas.height = firstFrame.height;
+
+      currentFrameIndex = 0;
+
+      function drawFrame() {
+        const frame = frames[currentFrameIndex];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(frame.imageData, 0, 0, canvas.width, canvas.height);
+
+        currentFrameIndex = (currentFrameIndex + 1) % frames.length;
+        
+        const adjustedDuration = frame.duration / speed;
+        previewInterval = setTimeout(drawFrame, adjustedDuration);
+      }
+
+      drawFrame();
+    }
+
+    function stopPreview() {
+      if (previewInterval) {
+        clearTimeout(previewInterval);
+        previewInterval = null;
+      }
+    }
+
+    // ========================================
+    // GIF生成（安定化版・CORS対策）
+    // ========================================
+    async function generateGIF() {
+      if (frames.length === 0) {
+        showMessage('フレームがありません', 'error');
+        return null;
+      }
+
+      showProgress('GIF生成準備中...', 0);
+
+      return new Promise(async (resolve, reject) => {
+        try {
+          // 最初のフレームのサイズを取得
+          const firstFrame = frames[0].imageData;
+          const width = firstFrame.width;
+          const height = firstFrame.height;
+
+          console.log('GIF生成開始:', { frameCount: frames.length, width, height });
+
+          // CORS対策: Workerスクリプトをfetchしてblob URLとして読み込む
+          let workerScriptUrl;
+          try {
+            const workerScriptResponse = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
+            const workerScriptBlob = await workerScriptResponse.blob();
+            workerScriptUrl = URL.createObjectURL(workerScriptBlob);
+            console.log('Workerスクリプト読み込み成功');
+          } catch (workerError) {
+            console.warn('Workerスクリプト読み込み失敗、workers無効化:', workerError);
+            workerScriptUrl = null;
+          }
+
+          const gif = new GIF({
+            workers: workerScriptUrl ? 2 : 0, // Workerが使えない場合は0
+            quality: 10,
+            width: width,
+            height: height,
+            workerScript: workerScriptUrl,
+            repeat: 0 // 無限ループ
+          });
+
+          // フレームを順次追加（安定性向上のため同期的に処理）
+          let frameIndex = 0;
+          
+          function addNextFrame() {
+            if (frameIndex >= frames.length) {
+              // 全フレーム追加完了、レンダリング開始
+              console.log('全フレーム追加完了。レンダリング開始...');
+              updateProgress(30, 'GIF生成中...');
+              gif.render();
+              return;
+            }
+
+            const frame = frames[frameIndex];
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(frame.imageData, 0, 0, width, height);
+
+            gif.addFrame(tempCtx, { delay: frame.duration, copy: true });
+
+            frameIndex++;
+            const progress = (frameIndex / frames.length) * 30;
+            updateProgress(progress, `フレーム ${frameIndex}/${frames.length} 追加中...`);
+            console.log(`フレーム ${frameIndex}/${frames.length} 追加完了`);
+
+            // 次のフレームを非同期で追加（UIの応答性を保つ）
+            setTimeout(addNextFrame, 0);
+          }
+
+          // フレーム追加開始
+          addNextFrame();
+
+          gif.on('progress', (p) => {
+            const progress = 30 + (p * 70);
+            updateProgress(progress, `GIF生成中... ${Math.round(p * 100)}%`);
+            console.log('GIF生成進捗:', Math.round(p * 100) + '%');
+          });
+
+          gif.on('finished', (blob) => {
+            console.log('GIF生成完了:', blob.size, 'bytes');
+            updateProgress(100, 'GIF生成完了！');
+            setTimeout(() => {
+              hideProgress();
+              resolve(blob);
+            }, 500);
+          });
+
+          gif.on('abort', () => {
+            console.error('GIF生成が中断されました');
+            hideProgress();
+            reject(new Error('GIF生成が中断されました'));
+          });
+
+          gif.on('error', (error) => {
+            console.error('GIF生成エラー:', error);
+            hideProgress();
+            reject(error);
+          });
+
+        } catch (error) {
+          console.error('GIF生成処理エラー:', error);
+          hideProgress();
+          reject(error);
+        }
+      });
+    }
+
+    // ========================================
+    // FFmpeg.wasm による MP4 変換
+    // ========================================
+    async function loadFFmpeg() {
+      if (ffmpegLoaded) return ffmpegInstance;
+
+      showLoading('FFmpeg を読み込んでいます...');
+
+      try {
+        const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/+esm');
+        const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/+esm');
+
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+
+        ffmpegInstance = new FFmpeg();
+        
+        ffmpegInstance.on('log', ({ message }) => {
+          console.log('[FFmpeg]', message);
+        });
+
+        ffmpegInstance.on('progress', ({ progress }) => {
+          const percent = Math.round(progress * 100);
+          updateProgress(percent, `MP4変換中... ${percent}%`);
+        });
+
+        await ffmpegInstance.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+        });
+
+        ffmpegLoaded = true;
+        hideLoading();
+        showMessage('FFmpeg の読み込みが完了しました', 'success');
+        return ffmpegInstance;
+
+      } catch (error) {
+        hideLoading();
+        showMessage('FFmpeg の読み込みに失敗しました: ' + error.message, 'error');
+        throw error;
+      }
+    }
+
+    async function convertGIFtoMP4(gifBlob) {
+      try {
+        const ffmpeg = await loadFFmpeg();
+
+        showProgress('MP4変換準備中...', 0);
+
+        // GIFをFFmpegのファイルシステムに書き込み
+        updateProgress(10, 'GIFデータ読み込み中...');
+        const gifData = new Uint8Array(await gifBlob.arrayBuffer());
+        
+        updateProgress(20, 'FFmpegにデータ転送中...');
+        await ffmpeg.writeFile('input.gif', gifData);
+
+        // FFmpegコマンド実行
+        // 480px幅にスケール、15fps、H.264コーデック、最適化設定
+        updateProgress(30, 'MP4変換中...');
+        await ffmpeg.exec([
+          '-i', 'input.gif',
+          '-movflags', '+faststart',
+          '-pix_fmt', 'yuv420p',
+          '-vf', "scale='min(480,iw)':-2,fps=15",
+          '-c:v', 'libx264',
+          '-preset', 'fast',
+          '-crf', '28',
+          '-an',
+          'output.mp4'
+        ]);
+
+        // 出力ファイルを読み取り
+        updateProgress(90, 'MP4データ取得中...');
+        const mp4Data = await ffmpeg.readFile('output.mp4');
+        const mp4Blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
+
+        // クリーンアップ
+        updateProgress(95, '後処理中...');
+        await ffmpeg.deleteFile('input.gif');
+        await ffmpeg.deleteFile('output.mp4');
+
+        updateProgress(100, 'MP4変換完了！');
+        setTimeout(() => hideProgress(), 500);
+        
+        return mp4Blob;
+
+      } catch (error) {
+        hideProgress();
+        showMessage('MP4変換に失敗しました: ' + error.message, 'error');
+        throw error;
+      }
+    }
+
+    // ========================================
+    // ダウンロード処理
+    // ========================================
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // メモリリークを防ぐため、少し遅延させてからURLを解放
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // ========================================
+    // エクスポート処理（自動ダウンロード対応）
+    // ========================================
+    let lastGifBlob = null;
+    let lastMp4Blob = null;
+
+    exportGifBtn.addEventListener('click', async () => {
+      if (frames.length === 0) {
+        showMessage('フレームがありません', 'error');
+        return;
+      }
+
+      // UIロック
+      exportGifBtn.disabled = true;
+      captureBtn.disabled = true;
+      deleteLastBtn.disabled = true;
+      
+      const startTime = Date.now();
+
+      try {
+        // GIF生成
+        showMessage('GIF生成を開始します...', 'info');
+        const gifBlob = await generateGIF();
+        lastGifBlob = gifBlob;
+
+        const gifSize = formatFileSize(gifBlob.size);
+        const gifTime = ((Date.now() - startTime) / 1000).toFixed(2) + '秒';
+
+        document.getElementById('gifSize').textContent = gifSize;
+        document.getElementById('processingTime').textContent = gifTime;
+
+        // GIF自動ダウンロード
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        downloadBlob(gifBlob, `コマアニメ_${timestamp}.gif`);
+        
+        exportInfo.style.display = 'block';
+        showMessage(`✅ GIF生成完了！ (${gifSize}, ${gifTime})`, 'success');
+
+      } catch (error) {
+        console.error('エクスポートエラー:', error);
+        showMessage('エクスポートに失敗しました: ' + error.message, 'error');
+      } finally {
+        // UIロック解除
+        exportGifBtn.disabled = false;
+        captureBtn.disabled = false;
+        updateDeleteButtonState();
+      }
+    });
+
+    // ========================================
+    // UI制御ユーティリティ
+    // ========================================
+    function showProgress(message, percent) {
+      progressContainer.classList.add('active');
+      progressText.textContent = message;
+      updateProgress(percent, message);
+    }
+
+    function updateProgress(percent, message) {
+      progressFill.style.width = percent + '%';
+      progressFill.textContent = Math.round(percent) + '%';
+      if (message) {
+        progressText.textContent = message;
+      }
+    }
+
+    function hideProgress() {
+      progressContainer.classList.remove('active');
+    }
+
+    function showLoading(message) {
+      loadingText.textContent = message;
+      loadingOverlay.classList.add('active');
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+    }
+
+    function showMessage(message, type = 'info') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message message-${type}`;
+      messageDiv.textContent = message;
+      messageContainer.innerHTML = '';
+      messageContainer.appendChild(messageDiv);
+
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 5000);
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // ========================================
+    // イベントリスナー
+    // ========================================
+    toggleCameraBtn.addEventListener('click', () => {
+      if (cameraStream) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    });
+
+    captureBtn.addEventListener('click', captureFrame);
+
+    deleteLastBtn.addEventListener('click', deleteLastFrame);
+
+    onionSkinToggle.addEventListener('change', (e) => {
+      isOnionSkinEnabled = e.target.checked;
+      updateOnionSkin();
+    });
+
+    // オニオンスキンを更新する関数
+    function updateOnionSkin() {
+      const canvas = document.getElementById('onionSkinCanvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+
+      if (isOnionSkinEnabled && frames.length > 0 && cameraStream && videoPreview.videoWidth > 0) {
+        // キャンバスサイズをビデオと同じにする
+        canvas.width = videoPreview.videoWidth;
+        canvas.height = videoPreview.videoHeight;
+        canvas.classList.add('active');
+
+        // 前フレームを半透明で描画
+        const lastFrame = frames[frames.length - 1];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 0.4;
+        ctx.drawImage(lastFrame.imageData, 0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1.0;
+      } else {
+        // オニオンスキンをクリア
+        canvas.classList.remove('active');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    speedSlider.addEventListener('input', (e) => {
+      speedValue.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+    });
+
+    playPreviewBtn.addEventListener('click', playPreview);
+
+    stopPreviewBtn.addEventListener('click', () => {
+      stopPreview();
+      showMessage('プレビューを停止しました', 'info');
+    });
+
+    // ページ離脱時にカメラを停止
+    window.addEventListener('beforeunload', () => {
+      stopCamera();
+      stopPreview();
+    });
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99d60d30c68235c9',t:'MTc2Mjk1MDc0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
